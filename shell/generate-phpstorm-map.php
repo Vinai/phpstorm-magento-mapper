@@ -1,6 +1,6 @@
 <?php
 
-require_once 'abstract.php';
+require_once dirname($argv[0]) . '/abstract.php';
 
 class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 {
@@ -32,10 +32,10 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         foreach ($this->getActiveModules() as $module) {
             $moduleConfig = $this->_getModuleConfig($module);
             if ($moduleConfig && $moduleConfig->getNode()) {
-                $models += $this->_getMap('model', $moduleConfig);
-                $blocks += $this->_getMap('block', $moduleConfig);
-                $helpers += $this->_getMap('helper', $moduleConfig);
-                $resourceModels += $this->_getResourcMap($moduleConfig);
+                $models += $this->_getMap('model', $moduleConfig, $module);
+                $blocks += $this->_getMap('block', $moduleConfig, $module);
+                $helpers += $this->_getMap('helper', $moduleConfig, $module);
+                $resourceModels += $this->_getResourcMap($moduleConfig, $module);
             }
         }
 
@@ -83,17 +83,29 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
     /**
      * @param string $type
      * @param Mage_Core_Model_Config_Base $moduleConfig
+     * @param string $module
      * @return array
      */
-    protected function _getMap($type, Mage_Core_Model_Config_Base $moduleConfig)
+    protected function _getMap($type, Mage_Core_Model_Config_Base $moduleConfig, $module)
     {
         $map = array();
         $classGroup = $this->_getClassGroup($type, $moduleConfig);
         $classPrefix = $this->_getClassPrefix($type, $moduleConfig);
+
+        // Defaults for Mage namespace
+        if (!$classGroup && preg_match('/^Mage_([^_]+)$/', $module, $m)) {
+            $classGroup = strtolower($m[1]);
+            $classPrefix = 'Mage_' . ucfirst($classGroup) . '_' . ucfirst($type);
+        }
+
         if ($classGroup && $classPrefix) {
             foreach ($this->_collectClassSuffixes($classPrefix) as $suffix) {
                 $factoryName = $classGroup . '/' . $suffix;
                 $map[$factoryName] = $this->getConfig()->getGroupedClassName($type, $factoryName);
+                // Add default for data helpers
+                if ('helper' === $type && 'data' === $suffix) {
+                    $map[$classGroup] = $map[$factoryName];
+                }
             }
         }
         return $map;
@@ -101,9 +113,10 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 
     /**
      * @param Mage_Core_Model_Config_Base $moduleConfig
+     * @param $module
      * @return array
      */
-    protected function _getResourcMap(Mage_Core_Model_Config_Base $moduleConfig)
+    protected function _getResourcMap(Mage_Core_Model_Config_Base $moduleConfig, $module)
     {
         $map = array();
         return $map;
@@ -137,6 +150,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         if ($classConfigs) {
             return $classConfigs[0];
         }
+
         return false;
     }
 
@@ -188,6 +202,9 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             if ($item->isFile() &&
                     substr($item->getBasename(), -4 === '.php')
             ) {
+                if ($item->getBasename() == 'Abstract.php')
+                    continue;
+
                 $file = substr($item->getPathname(), strlen($dir) + 1); // Remove leading path
                 $file = substr($file, 0, -4); // Remove .php
                 $classes[] = str_replace(DS, '_', $file);
