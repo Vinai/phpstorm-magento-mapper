@@ -1,0 +1,16 @@
+{
+    "name":"netzarbeiter/phpstorm-magento-mapper",
+    "type":"magento-module",
+    "license":"OSL-3.0",
+    "homepage":"https://github.com/Vinai/phpstorm-magento-mapper",
+    "description":"Shell script to create a phpstorm factory method class map",
+    "authors":[
+        {
+            "name":"Vinai Kopp",
+            "email":"vinai@netzarbeiter.com"
+        }
+    ],
+    "require":{
+        "magento-hackathon/magento-composer-installer":"*"
+    }
+}
