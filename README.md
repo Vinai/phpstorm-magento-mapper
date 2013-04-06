@@ -4,7 +4,7 @@ This extension is for Magento Developers using PHPStorm. It generates a class ma
 
 Facts
 -----
-- version: 0.1
+- version: 0.2
 - extension key: - none -
 - Magento Connect 1.0 extension key: - none -
 - Magento Connect 2.0 extension key: - none -
@@ -13,21 +13,24 @@ Facts
 
 Description
 -----------
-Build a class map for the new phpstorm feature
+Build a class map for the new phpstorm feature introduced with the blog post
+http://blog.jetbrains.com/webide/2013/04/phpstorm-6-0-1-eap-build-129-177/
 
-Still missing: map for Mage::getResourceModel() and Mage::getResourceSingleton()
+You need to rerun the script every time you add a class or configure a rewrite.
+
+- Supported Factory Methods
+ - Mage::getModel()
+ - Mage::getSingleton()
+ - Mage::getResourceModel()
+ - Mage::getResourceSingleton()
+ - Mage::helper()
+- Respects class rewrites
 
 Usage
 -----
-php shell/generate-phpstorm-map.php --file .phpstorm.meta.php
+```php shell/generate-phpstorm-map.php --file .phpstorm.meta.php```
 
-Compatibility
--------------
-
-
-Installation Instructions
--------------------------
-
+If no file is specified the classmap will be output to STDOUT
 
 Support
 -------
