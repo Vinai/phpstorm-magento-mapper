@@ -33,7 +33,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             $moduleConfig = $this->_getModuleConfig($module);
             if ($moduleConfig && $moduleConfig->getNode()) {
                 $models += $this->_getMap('model', $moduleConfig, $module);
-                $blocks += $this->_getMap('block', $moduleConfig, $module);
+                //$blocks += $this->_getMap('block', $moduleConfig, $module);
                 $helpers += $this->_getMap('helper', $moduleConfig, $module);
                 $resourceModels += $this->_getResourcMap($moduleConfig, $module);
             }
@@ -46,6 +46,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             "\\Mage::getResourceSingleton('')" => $resourceModels,
             "\\Mage::helper('')" => $helpers,
             //"\\Mage::app()->getLayout()->createBock('')" => $blocks,
+            //"\$this->getLayout()->createBock('')" => $blocks,
         );
 
         $this->_writeMap($map);
@@ -74,10 +75,29 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
     {
         /** @var $moduleConfig Mage_Core_Model_Config_Base */
         $moduleConfig = Mage::getModel('core/config_base');
+
         $moduleConfig->loadFile(
             Mage::getModuleDir('etc', $module) . DS . 'config.xml'
         );
         return $moduleConfig;
+    }
+
+    /**
+     * @param string $type
+     * @param string $module
+     * @return array|bool
+     */
+    protected function _getMageDefaults($type, $module)
+    {
+        if (preg_match('/^Mage_([^_]+)$/', $module, $m)) {
+            $classGroup = strtolower($m[1]);
+            $classPrefix = 'Mage_' . ucfirst($classGroup) . '_' . ucfirst($type);
+            return array(
+                'classGroup' => $classGroup,
+                'classPrefix' => $classPrefix,
+            );
+        }
+        return false;
     }
 
     /**
@@ -93,9 +113,9 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         $classPrefix = $this->_getClassPrefix($type, $moduleConfig);
 
         // Defaults for Mage namespace
-        if (!$classGroup && preg_match('/^Mage_([^_]+)$/', $module, $m)) {
-            $classGroup = strtolower($m[1]);
-            $classPrefix = 'Mage_' . ucfirst($classGroup) . '_' . ucfirst($type);
+        if (!$classGroup && ($defaults = $this->_getMageDefaults($type, $module))) {
+            $classGroup = $defaults['classGroup'];
+            $classPrefix = $defaults['classPrefix'];
         }
 
         if ($classGroup && $classPrefix) {
@@ -119,6 +139,34 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
     protected function _getResourcMap(Mage_Core_Model_Config_Base $moduleConfig, $module)
     {
         $map = array();
+        $resourceClassPrefix = false;
+        $classGroup = $this->_getClassGroup('model', $moduleConfig);
+        if (!$classGroup && ($defaults = $this->_getMageDefaults('model', $module))) {
+            $classGroup = $defaults['classGroup'];
+        }
+        if ($classGroup) {
+            $xpath = "global/models/{$classGroup}/resourceModel";
+            $resourceClassGroupConfig = $moduleConfig->getNode()->xpath($xpath);
+            if ($resourceClassGroupConfig) {
+                $xpath = "global/models/{$resourceClassGroupConfig[0]}/class";
+                $resourceClassPrefixConfig = $moduleConfig->getNode()->xpath($xpath);
+                if ($resourceClassPrefixConfig) {
+                    $resourceClassPrefix = (string) $resourceClassPrefixConfig[0];
+                }
+            }
+
+            if (! $resourceClassPrefix && 'Mage_Core' == $module) {
+                // Apply defaults from app/etc/config.xml
+                $resourceClassPrefix = 'Mage_Core_Model_Resource';
+            }
+
+            if ($resourceClassPrefix) {
+                foreach ($this->_collectClassSuffixes($resourceClassPrefix) as $suffix) {
+                    $factoryName = $classGroup . '/' . $suffix;
+                    $map[$factoryName] = $this->getConfig()->getResourceModelClassName($factoryName);
+                }
+            }
+        }
         return $map;
     }
 
