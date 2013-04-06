@@ -1,6 +1,6 @@
 PHPStorm Magento Mapper
 ========================
-This extension is for Magento Developers using PHPStorm. It generates a class map for autocompletion
+This extension is for Magento Developers using PHPStorm. It generates a class map for autocompletion.
 
 Facts
 -----

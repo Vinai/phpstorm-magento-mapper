@@ -4,30 +4,48 @@ require_once 'abstract.php';
 
 class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 {
-    protected $_models = array();
-    protected $_resourceModels = array();
-    protected $_blocks = array();
-    protected $_helpers = array();
+    /**
+     * Support DI of the config model
+     *
+     * @var Mage_Core_Model_Config
+     */
+    protected $_config;
+
+    public function getConfig()
+    {
+        if (is_null($this->_config)) {
+            $this->_config = Mage::getConfig();
+        }
+        return $this->_config;
+    }
+
+    public function setConfig($config)
+    {
+        $this->_config = $config;
+        return $this;
+    }
 
     public function run()
     {
+        $models = $blocks = $helpers = $resourceModels = array();
+
         foreach ($this->getActiveModules() as $module) {
             $moduleConfig = $this->_getModuleConfig($module);
             if ($moduleConfig && $moduleConfig->getNode()) {
-                $this->_models += $this->_getMap('model', $moduleConfig);
-                $this->_blocks += $this->_getMap('block', $moduleConfig);
-                $this->_helpers += $this->_getMap('helper', $moduleConfig);
-                $this->_resourceModels += $this->_getResourcMap($moduleConfig);
+                $models += $this->_getMap('model', $moduleConfig);
+                $blocks += $this->_getMap('block', $moduleConfig);
+                $helpers += $this->_getMap('helper', $moduleConfig);
+                $resourceModels += $this->_getResourcMap($moduleConfig);
             }
         }
 
         $map = array(
-            "\\Mage::getModel('')" => $this->_models,
-            "\\Mage::getSingleton('')" => $this->_models,
-            "\\Mage::getResourceModel('')" => $this->_resourceModels,
-            "\\Mage::getResourceSingleton('')" => $this->_resourceModels,
-            "\\Mage::helper('')" => $this->_helpers,
-            "\\Mage::app()->getLayout()->createBock('')" => $this->_blocks,
+            "\\Mage::getModel('')" => $models,
+            "\\Mage::getSingleton('')" => $models,
+            "\\Mage::getResourceModel('')" => $resourceModels,
+            "\\Mage::getResourceSingleton('')" => $resourceModels,
+            "\\Mage::helper('')" => $helpers,
+            //"\\Mage::app()->getLayout()->createBock('')" => $blocks,
         );
 
         $this->_writeMap($map);
@@ -39,7 +57,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
     public function getActiveModules()
     {
         $modules = array();
-        $cofig = Mage::getConfig()->getNode('modules');
+        $cofig = $this->getConfig()->getNode('modules');
         foreach ($cofig->asArray() as $module => $info) {
             if ('true' === $info['active']) {
                 $modules[] = $module;
@@ -75,7 +93,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         if ($classGroup && $classPrefix) {
             foreach ($this->_collectClassSuffixes($classPrefix) as $suffix) {
                 $factoryName = $classGroup . '/' . $suffix;
-                $map[$factoryName] = Mage::getConfig()->getGroupedClassName($type, $factoryName);
+                $map[$factoryName] = $this->getConfig()->getGroupedClassName($type, $factoryName);
             }
         }
         return $map;
@@ -227,4 +245,4 @@ USAGE;
 }
 
 $shell = new PhpStorm_Map_Generator();
-$shell->run();
+$shell->setConfig(Mage::getConfig())->run();
