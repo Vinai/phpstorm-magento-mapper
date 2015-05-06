@@ -248,7 +248,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         /** @var $item SplFileInfo */
         foreach ($iterator as $item) {
             if ($item->isFile() &&
-                    substr($item->getBasename(), -4 === '.php')
+                    preg_match('/^[A-Za-z0-9\_]+\.php$/', $item->getBasename())
             ) {
                 if ($item->getBasename() == 'Abstract.php')
                     continue;
