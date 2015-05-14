@@ -269,6 +269,8 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 namespace PHPSTORM_META {
     /** @noinspection PhpUnusedLocalVariableInspection */
     /** @noinspection PhpIllegalArrayKeyTypeInspection */
+    /** @noinspection PhpUndefinedClassInspection /
+    /** @noinspection PhpDeprecationInspection */
     $STATIC_METHOD_TYPES = [' . PHP_EOL;
         fwrite($f, $str);
         foreach ($map as $factory => $classes) {
@@ -293,10 +295,6 @@ namespace PHPSTORM_META {
         return 'php://stdout';
     }
 
-    /**
-     * Retrieve Usage Help Message
-     *
-     */
     public function usageHelp()
     {
         return <<<USAGE
