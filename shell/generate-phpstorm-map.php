@@ -269,7 +269,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 namespace PHPSTORM_META {
     /** @noinspection PhpUnusedLocalVariableInspection */
     /** @noinspection PhpIllegalArrayKeyTypeInspection */
-    /** @noinspection PhpUndefinedClassInspection /
+    /** @noinspection PhpUndefinedClassInspection */
     /** @noinspection PhpDeprecationInspection */
     $STATIC_METHOD_TYPES = [' . PHP_EOL;
         fwrite($f, $str);
