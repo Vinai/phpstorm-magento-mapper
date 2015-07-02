@@ -297,8 +297,9 @@ namespace PHPSTORM_META {
 
     public function usageHelp()
     {
+        $fileName = pathinfo(__FILE__, PATHINFO_BASENAME);
         return <<<USAGE
-Usage:  php -f phpstorm-map.php -- [options]
+Usage:  php -f {$fileName} -- [options]
 
   --file <map-file>  Defaults to stdout
   help               This help
