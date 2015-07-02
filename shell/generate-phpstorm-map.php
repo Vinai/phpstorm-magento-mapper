@@ -39,6 +39,11 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             }
         }
 
+        //Sort the results from a to z
+        ksort($models);
+        ksort($helpers);
+        ksort($resourceModels);
+
         $map = array(
             "\\Mage::getModel('')" => $models,
             "\\Mage::getSingleton('')" => $models,
