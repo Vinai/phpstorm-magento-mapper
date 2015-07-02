@@ -14,7 +14,9 @@ Facts
 Description
 -----------
 Build a class map for the new phpstorm feature introduced with the blog post
-http://blog.jetbrains.com/webide/2013/04/phpstorm-6-0-1-eap-build-129-177/
+
+ - [Support of static factories](http://blog.jetbrains.com/webide/2013/04/phpstorm-6-0-1-eap-build-129-177/)
+ - [Support of non static factories](https://youtrack.jetbrains.com/issue/WI-27712)
 
 You need to rerun the script every time you add a class or configure a rewrite.
 
@@ -23,7 +25,16 @@ You need to rerun the script every time you add a class or configure a rewrite.
  - Mage::getSingleton()
  - Mage::getResourceModel()
  - Mage::getResourceSingleton()
+ - Mage::getBlockSingleton()
  - Mage::helper()
+ - Mage_Core_Model_Factory::getModel()
+ - Mage_Core_Model_Factory::getSingleton()
+ - Mage_Core_Model_Factory::getResourceModel()
+ - Mage_Core_Model_Factory::getHelper()
+ - Mage_Core_Block_Abstract::helper()
+ - Mage_Core_Model_Layout::createBlock()
+ - Mage_Core_Model_Layout::getBlockSingleton()
+ - Mage_Core_Block_Abstract::getHelper()
 - Respects class rewrites
 
 Usage

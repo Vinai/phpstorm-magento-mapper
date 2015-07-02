@@ -33,7 +33,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             $moduleConfig = $this->_getModuleConfig($module);
             if ($moduleConfig && $moduleConfig->getNode()) {
                 $models += $this->_getMap('model', $moduleConfig, $module);
-                //$blocks += $this->_getMap('block', $moduleConfig, $module);
+                $blocks += $this->_getMap('block', $moduleConfig, $module);
                 $helpers += $this->_getMap('helper', $moduleConfig, $module);
                 $resourceModels += $this->_getResourceMap($moduleConfig, $module);
             }
@@ -41,17 +41,29 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
 
         //Sort the results from a to z
         ksort($models);
+        ksort($blocks);
         ksort($helpers);
         ksort($resourceModels);
 
         $map = array(
-            "\\Mage::getModel('')" => $models,
-            "\\Mage::getSingleton('')" => $models,
-            "\\Mage::getResourceModel('')" => $resourceModels,
-            "\\Mage::getResourceSingleton('')" => $resourceModels,
-            "\\Mage::helper('')" => $helpers,
-            //"\\Mage::app()->getLayout()->createBlock('')" => $blocks,
-            //"\$this->getLayout()->createBlock('')" => $blocks,
+            //Default static factories
+            "\\Mage::getModel('')"                            => $models,
+            "\\Mage::getSingleton('')"                        => $models,
+            "\\Mage::getResourceModel('')"                    => $resourceModels,
+            "\\Mage::getResourceSingleton('')"                => $resourceModels,
+            "\\Mage::getBlockSingleton('')"                   => $blocks,
+            "\\Mage::helper('')"                              => $helpers,
+            //Default non static factories
+            "\\Mage_Core_Model_Factory::getModel('')"         => $models,
+            "\\Mage_Core_Model_Factory::getSingleton('')"     => $models,
+            "\\Mage_Core_Model_Factory::getResourceModel('')" => $resourceModels,
+            "\\Mage_Core_Model_Factory::getHelper('')"        => $helpers,
+            //Other helper factories
+            "\\Mage_Core_Block_Abstract::helper('')"          => $helpers,
+            //Other block factories
+            "\\Mage_Core_Model_Layout::createBlock('')"       => $blocks,
+            "\\Mage_Core_Model_Layout::getBlockSingleton('')" => $blocks,
+            "\\Mage_Core_Block_Abstract::getHelper('')"       => $blocks,
         );
 
         $this->_writeMap($map);
