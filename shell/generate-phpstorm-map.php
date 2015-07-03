@@ -33,20 +33,37 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             $moduleConfig = $this->_getModuleConfig($module);
             if ($moduleConfig && $moduleConfig->getNode()) {
                 $models += $this->_getMap('model', $moduleConfig, $module);
-                //$blocks += $this->_getMap('block', $moduleConfig, $module);
+                $blocks += $this->_getMap('block', $moduleConfig, $module);
                 $helpers += $this->_getMap('helper', $moduleConfig, $module);
-                $resourceModels += $this->_getResourcMap($moduleConfig, $module);
+                $resourceModels += $this->_getResourceMap($moduleConfig, $module);
             }
         }
 
+        //Sort the results from a to z
+        ksort($models);
+        ksort($blocks);
+        ksort($helpers);
+        ksort($resourceModels);
+
         $map = array(
-            "\\Mage::getModel('')" => $models,
-            "\\Mage::getSingleton('')" => $models,
-            "\\Mage::getResourceModel('')" => $resourceModels,
-            "\\Mage::getResourceSingleton('')" => $resourceModels,
-            "\\Mage::helper('')" => $helpers,
-            //"\\Mage::app()->getLayout()->createBock('')" => $blocks,
-            //"\$this->getLayout()->createBock('')" => $blocks,
+            //Default static factories
+            "\\Mage::getModel('')"                            => $models,
+            "\\Mage::getSingleton('')"                        => $models,
+            "\\Mage::getResourceModel('')"                    => $resourceModels,
+            "\\Mage::getResourceSingleton('')"                => $resourceModels,
+            "\\Mage::getBlockSingleton('')"                   => $blocks,
+            "\\Mage::helper('')"                              => $helpers,
+            //Default non static factories
+            "\\Mage_Core_Model_Factory::getModel('')"         => $models,
+            "\\Mage_Core_Model_Factory::getSingleton('')"     => $models,
+            "\\Mage_Core_Model_Factory::getResourceModel('')" => $resourceModels,
+            "\\Mage_Core_Model_Factory::getHelper('')"        => $helpers,
+            //Other helper factories
+            "\\Mage_Core_Block_Abstract::helper('')"          => $helpers,
+            //Other block factories
+            "\\Mage_Core_Model_Layout::createBlock('')"       => $blocks,
+            "\\Mage_Core_Model_Layout::getBlockSingleton('')" => $blocks,
+            "\\Mage_Core_Block_Abstract::getHelper('')"       => $blocks,
         );
 
         $this->_writeMap($map);
@@ -58,8 +75,8 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
     public function getActiveModules()
     {
         $modules = array();
-        $cofig = $this->getConfig()->getNode('modules');
-        foreach ($cofig->asArray() as $module => $info) {
+        $config = $this->getConfig()->getNode('modules');
+        foreach ($config->asArray() as $module => $info) {
             if ('true' === $info['active']) {
                 $modules[] = $module;
             }
@@ -136,7 +153,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
      * @param $module
      * @return array
      */
-    protected function _getResourcMap(Mage_Core_Model_Config_Base $moduleConfig, $module)
+    protected function _getResourceMap(Mage_Core_Model_Config_Base $moduleConfig, $module)
     {
         $map = array();
         $resourceClassPrefix = false;
@@ -297,8 +314,9 @@ namespace PHPSTORM_META {
 
     public function usageHelp()
     {
+        $fileName = pathinfo(__FILE__, PATHINFO_BASENAME);
         return <<<USAGE
-Usage:  php -f phpstorm-map.php -- [options]
+Usage:  php -f {$fileName} -- [options]
 
   --file <map-file>  Defaults to stdout
   help               This help
