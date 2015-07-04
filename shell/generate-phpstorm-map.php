@@ -249,10 +249,6 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         return $classes;
     }
 
-    public function _lowercase()
-    {
-    }
-
     /**
      * @param $dir
      * @return array
