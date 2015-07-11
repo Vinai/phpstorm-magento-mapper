@@ -8,6 +8,10 @@
         {
             "name":"Vinai Kopp",
             "email":"vinai@netzarbeiter.com"
+        },
+        {
+            "name":"Erik Wohllebe",
+            "email":"Erik.Wohllebe@googlemail.com"
         }
     ],
     "require":{
