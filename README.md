@@ -46,12 +46,12 @@ If no file is specified the class map will be output to STDOUT
 Parameters
 -----
 
-| Option                    |    Default   | Description                                                                                                  |
-|---------------------------|:------------:|--------------------------------------------------------------------------------------------------------------|
-| ```--file```              | ```stdout``` | File location to save the output.                                                                            |
-| ```--instantiableCheck``` |   ```Off```  | Perform an additional instantiable check for each class. It its enabled the generate process will slow down. |
-| ```--phpExecutable```     |   ```php```  | Path to the php executable to start the instantiable check.                                                  |
-| ```--debug```             |   ```Off```  | Print debug output on ```stderr``` why classes gets excluded.                                                |
+| Option                    |    Default   | Description                                                                                                   |
+|---------------------------|:------------:|---------------------------------------------------------------------------------------------------------------|
+| ```--file```              | ```stdout``` | File location to save the output.                                                                             |
+| ```--instantiableCheck``` |   ```Off```  | Perform an additional instantiable check for each class. If it's enabled the generate process will slow down. |
+| ```--phpExecutable```     |   ```php```  | Path to the php executable to start the instantiable check.                                                   |
+| ```--debug```             |   ```Off```  | Print debug output on ```stderr``` why classes gets excluded.                                                 |
 
 Support
 -------
