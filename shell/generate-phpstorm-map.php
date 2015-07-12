@@ -11,6 +11,13 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
      */
     protected $_config;
 
+    /**
+     * Holds the cached results of the instantiable check.
+     *
+     * @var array
+     */
+    protected $_instantiableClassCache = array();
+
     public function getConfig()
     {
         if (is_null($this->_config)) {
@@ -66,6 +73,15 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             "\\Mage_Core_Block_Abstract::getHelper('')"       => $blocks,
         );
 
+        //Create an extension point to extend the map without override the file
+        $eventTransport      = new stdClass();
+        $eventTransport->map = $map;
+        Mage::dispatchEvent('phpstorm_map_generator_extend_map', array('transport' => $eventTransport));
+        $map = $eventTransport->map;
+
+        if ($this->isInstantiableCheckActive()) {
+            $map = $this->_cleanMap($map);
+        }
         $this->_writeMap($map);
     }
 
@@ -74,6 +90,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
      */
     public function getActiveModules()
     {
+        /* @var $config Mage_Core_Model_Config_Element */
         $modules = array();
         $config = $this->getConfig()->getNode('modules');
         foreach ($config->asArray() as $module => $info) {
@@ -249,10 +266,6 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
         return $classes;
     }
 
-    public function _lowercase()
-    {
-    }
-
     /**
      * @param $dir
      * @return array
@@ -267,15 +280,126 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
             if ($item->isFile() &&
                     preg_match('/^[A-Za-z0-9\_]+\.php$/', $item->getBasename())
             ) {
-                if ($item->getBasename() == 'Abstract.php')
-                    continue;
+                $file      = substr($item->getPathname(), strlen($dir) + 1); // Remove leading path
+                $file      = substr($file, 0, -4); // Remove .php
+                $className = str_replace(DS, '_', $file);
 
-                $file = substr($item->getPathname(), strlen($dir) + 1); // Remove leading path
-                $file = substr($file, 0, -4); // Remove .php
-                $classes[] = str_replace(DS, '_', $file);
+                if (!$this->isInstantiableCheckActive()
+                    && ($item->getBasename() == 'Abstract.php' || $item->getBasename() == 'Interface.php')
+                ) {
+                    $this->debug("Not instantiable: {$className}");
+                    continue;
+                }
+
+                $classes[] = $className;
             }
         }
         return $classes;
+    }
+
+    /**
+     * Remove all entries from the given class map that are not instantiable with a new operator.
+     *
+     * @param array $factoryMap
+     * @return array
+     */
+    protected function _cleanMap(array $factoryMap)
+    {
+        foreach ($factoryMap as $factory => $classMap) {
+            $classMapChunks = array_chunk($classMap, 10, true);
+            foreach ($classMapChunks as $classMapChunk) {
+                $invalidClasses = $this->_getNotInstantiableClasses($classMapChunk);
+                if ($invalidClasses) {
+                    foreach ($invalidClasses as $factoryName => $className) {
+                        unset($factoryMap[$factory][$factoryName]);
+                    }
+                }
+            }
+        }
+
+        return $factoryMap;
+    }
+
+    /**
+     * @param array $classMap
+     * @return array
+     */
+    protected function _getNotInstantiableClasses(array $classMap)
+    {
+        $invalidClasses = array();
+
+        //Remove classes that was already checked
+        foreach ($classMap as $factoryName => $className) {
+            if (isset($this->_instantiableClassCache[$className])) {
+                if (!$this->_instantiableClassCache[$className]) {
+                    $invalidClasses[$factoryName] = $className;
+                }
+                unset($classMap[$factoryName]);
+            }
+        }
+
+        //Check if all items was resolved form the cache
+        if (!$classMap) {
+            return $invalidClasses;
+        }
+
+        //Check if all classes are valid
+        if ($this->_isClassInstantiable($classMap, true)) {
+            foreach ($classMap as $className) {
+                $this->_instantiableClassCache[$className] = true;
+            }
+            return $invalidClasses;
+        }
+
+        //It not, we need to check all classes once by once
+        foreach ($classMap as $factoryName => $className) {
+            if ($this->_isClassInstantiable($className)) {
+                $this->_instantiableClassCache[$className] = true;
+            } else {
+                $invalidClasses[$factoryName]              = $className;
+                $this->_instantiableClassCache[$className] = false;
+            }
+        }
+
+        return $invalidClasses;
+    }
+
+    /**
+     * Perform an instantiable check for the given classes.
+     *
+     * The calculation the result for an single class creates a big overhead. Its better to call this method
+     * with an array of class names. If it fails for an chunk of class names you need to iterate over all
+     * elements of the chunk to detect all invalid class. Don't break on the first invalid  class because the
+     * chunk may contains multiple invalid classes.
+     *
+     * @param string|array $classNames
+     * @param bool         $skipLog
+     * @return bool
+     */
+    protected function _isClassInstantiable($classNames, $skipLog = false)
+    {
+        static $file = __DIR__ . DS . 'helper' . DS . 'instantiableTester.php';
+        if (!is_array($classNames)) {
+            $classNames = array($classNames);
+        }
+
+        $cmdClassNames = implode(' ', array_map('escapeshellarg', $classNames));
+        exec("{$this->getPhpExecutable()} -f={$file} {$cmdClassNames}", $execOutputLines);
+        if (isset($execOutputLines[0]) && 'Done' === $execOutputLines[0]) {
+            return true;
+        }
+
+        //Search the first non empty message
+        if (!$skipLog) {
+            foreach ($execOutputLines as $line) {
+                if (($line = trim($line))) {
+                    $this->debug("{$line}: " . implode(', ', $classNames));
+                    break;
+                }
+            }
+        }
+
+        return false;
     }
 
     protected function _writeMap(array $map)
@@ -318,10 +442,63 @@ namespace PHPSTORM_META {
         return <<<USAGE
 Usage:  php -f {$fileName} -- [options]
 
-  --file <map-file>  Defaults to stdout
-  help               This help
+  --file <map-file>      Defaults to <stdout>
+  --instantiableCheck    Activate instantiable check for every class
+  --phpExecutable <path> Define path to the php executable for the
+                         instantiable check, "php" by default
+  --debug                Enable debug output on <stderr>
+  help                   This help
 
 USAGE;
+    }
+
+    /**
+     * Log the given message to stderr if the debug flag is active.
+     *
+     * @param $message
+     * @return $this
+     */
+    public function debug($message)
+    {
+        if ($this->isDebugActive()) {
+            fwrite(STDERR, $message . PHP_EOL);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Return true if the instantiable check is active.
+     *
+     * @return bool
+     */
+    public function isInstantiableCheckActive()
+    {
+        return array_key_exists('instantiableCheck', $this->_args);
+    }
+
+    /**
+     * Return the path to the php executable.
+     *
+     * @return string
+     */
+    public function getPhpExecutable()
+    {
+        if (isset($this->_args['phpExecutable'])) {
+            return $this->_args['phpExecutable'];
+        }
+
+        return 'php';
+    }
+
+    /**
+     * Return true if the debug feature is enabled.
+     *
+     * @return bool
+     */
+    public function isDebugActive()
+    {
+        return array_key_exists('debug', $this->_args);
     }
 }
 

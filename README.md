@@ -1,6 +1,6 @@
 PHPStorm Magento Mapper
 ========================
-This extension is for Magento Developers using PHPStorm. It generates a class map for autocompletion.
+This extension is for Magento developers using PhpStorm. It generates a class map for autocompletion.
 
 Facts
 -----
@@ -13,7 +13,7 @@ Facts
 
 Description
 -----------
-Build a class map for the new phpstorm feature introduced with the blog post
+Build a class map for the PhpStorm facorty support introduced with the blog posts.
 
  - [Support of static factories](http://blog.jetbrains.com/webide/2013/04/phpstorm-6-0-1-eap-build-129-177/)
  - [Support of non static factories](https://youtrack.jetbrains.com/issue/WI-27712)
@@ -41,11 +41,21 @@ Usage
 -----
 ```php shell/generate-phpstorm-map.php --file .phpstorm.meta.php```
 
-If no file is specified the classmap will be output to STDOUT
+If no file is specified the class map will be output to STDOUT
+
+Parameters
+-----
+
+| Option                    |    Default   | Description                                                                                                   |
+|---------------------------|:------------:|---------------------------------------------------------------------------------------------------------------|
+| ```--file```              | ```stdout``` | File location to save the output.                                                                             |
+| ```--instantiableCheck``` |   ```Off```  | Perform an additional instantiable check for each class. If it's enabled the generate process will slow down. |
+| ```--phpExecutable```     |   ```php```  | Path to the php executable to start the instantiable check.                                                   |
+| ```--debug```             |   ```Off```  | Print debug output on ```stderr``` why classes gets excluded.                                                 |
 
 Support
 -------
-If you have any issues with this extension, open an issue on GitHub (see URL above)
+If you have any issues with this extension, open an issue on GitHub (see URL above).
 
 Contribution
 ------------
@@ -54,9 +64,10 @@ Any contributions are highly appreciated. The best way to contribute code is to 
 
 Developer
 ---------
-Vinai Kopp
+* Vinai Kopp
 [http://www.netzarbeiter.com](http://www.netzarbeiter.com)
 [@VinaiKopp](https://twitter.com/VinaiKopp)
+* Erik Wohllebe
 
 Licence
 -------
