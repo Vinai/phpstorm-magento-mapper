@@ -378,7 +378,7 @@ class PhpStorm_Map_Generator extends Mage_Shell_Abstract
      */
     protected function _isClassInstantiable($classNames, $skipLog = false)
     {
-        static $file = __DIR__ . DS . 'helper' . DS . 'instantiableTester.php';
+        $file = __DIR__ . DS . 'helper' . DS . 'instantiableTester.php';
         if (!is_array($classNames)) {
             $classNames = array($classNames);
         }
